@@ -1,0 +1,229 @@
+// ================================
+// Job Application Model
+// ================================
+
+model Job {
+    id     String @id @default(auto()) @map("_id") @db.ObjectId
+    authId String @db.ObjectId // Owner of the job application
+
+    // Company Info
+    company         String
+    companyUrl      String?
+    companyLinkedin String?
+    companyFacebook String?
+    companyTwitter  String?
+    companyLogo     String? // URL to company logo
+
+    // Role Info
+    role         String
+    location     String
+    locationType JobLocationType @default(REMOTE)
+
+    // Salary Information
+    salaryDisplay  String? // Display string like "$120k - $180k"
+    salaryMin      Int?
+    salaryMax      Int?
+    salaryCurrency String  @default("USD")
+
+    // Contact Information
+    contactPerson String?
+    contactEmail  String?
+    contactPhone  String?
+
+    // Application Details
+    appliedDate    DateTime
+    appliedVia     AppliedVia
+    jobPostingUrl  String?
+    status         JobStatus      @default(APPLIED)
+    responseStatus ResponseStatus @default(NO_RESPONSE)
+    responseDate   DateTime?
+
+    // Job Details (Text fields — @db.Text removed for MongoDB compatibility)
+    techStack        String[] // MongoDB native array support
+    jobDescription   String?
+    requirements     String?
+    responsibilities String?
+    benefits         String?
+
+    // Interview Information
+    interviewScheduled Boolean        @default(false)
+    interviewDate      DateTime?
+    interviewType      InterviewType?
+    interviewRound     Int?
+    interviewLocation  String? // Physical/virtual location
+    interviewNotes     String?
+
+    // Organization & Tracking
+    priority   JobPriority @default(MEDIUM)
+    tags       String[] // MongoDB native array support
+    isFavorite Boolean     @default(false)
+    isArchived Boolean     @default(false)
+
+    // Offer Details — Decimal changed to Float for MongoDB compatibility
+    offerAmount   Float?
+    offerDate     DateTime?
+    offerDeadline DateTime?
+    offerNotes    String?
+
+    // Rejection Details
+    rejectionReason String?
+    rejectionDate   DateTime?
+
+    // Quick Notes (separate from detailed JobNote)
+    notes String?
+
+    // AI Integration Fields (for future AI features)
+    aiParsedData      Json? // Store raw AI parsing results
+    aiConfidenceScore Float? // How confident was AI parsing (0-1)
+    sourceType        JobSourceType @default(MANUAL)
+    rawJobPosting     String? // Original job posting for re-parsing
+
+    // Follow-up Tracking (denormalized for quick access)
+    nextFollowUpDate DateTime?
+    followUpCount    Int       @default(0)
+    lastFollowUpDate DateTime?
+
+    // Timestamps
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime? // Soft delete
+
+    // Relations
+    authUser  authUser           @relation(fields: [authId], references: [id], onDelete: Cascade)
+    followUps JobFollowUp[]
+    jobNotes  JobNote[]
+    timeline  JobTimelineEvent[]
+    documents JobDocument[]
+    reminders JobReminder[]
+
+    // Indexes for common queries
+    @@index([authId])
+    @@index([authId, status])
+    @@index([authId, appliedDate])
+    @@index([authId, isArchived])
+    @@index([authId, isFavorite])
+    @@index([authId, deletedAt])
+    @@index([authId, priority])
+    @@index([authId, responseStatus])
+    @@index([company])
+    @@index([createdAt])
+}
+
+// ================================
+// Job Follow-Up Model
+// ================================
+
+model JobFollowUp {
+    id            String         @id @default(auto()) @map("_id") @db.ObjectId
+    jobId         String         @db.ObjectId
+    scheduledDate DateTime
+    completedDate DateTime?
+    status        FollowUpStatus @default(PENDING)
+    type          FollowUpType
+    subject       String?
+    message       String?
+    response      String? // Store any response received
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
+
+    // Relations
+    job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+    @@index([jobId])
+    @@index([scheduledDate, status])
+    @@index([jobId, status])
+}
+
+// ================================
+// Job Note Model
+// ================================
+
+model JobNote {
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    jobId     String   @db.ObjectId
+    title     String
+    content   String
+    isPinned  Boolean  @default(false)
+    category  String? // Optional categorization (interview, research, etc.)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+    @@index([jobId])
+    @@index([jobId, isPinned])
+    @@index([jobId, createdAt])
+}
+
+// ================================
+// Job Timeline Event Model
+// ================================
+
+model JobTimelineEvent {
+    id          String               @id @default(auto()) @map("_id") @db.ObjectId
+    jobId       String               @db.ObjectId
+    eventType   JobTimelineEventType
+    title       String
+    description String?
+    metadata    Json? // Additional event-specific data
+    createdAt   DateTime             @default(now())
+
+    // Relations
+    job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+    @@index([jobId, createdAt])
+    @@index([jobId, eventType])
+}
+
+// ================================
+// Job Document Model
+// ================================
+
+model JobDocument {
+    id        String          @id @default(auto()) @map("_id") @db.ObjectId
+    jobId     String          @db.ObjectId
+    name      String
+    type      JobDocumentType
+    url       String? // Public URL or signed URL
+    fileKey   String? // S3/storage key for private files
+    mimeType  String?
+    size      Int? // File size in bytes
+    version   Int             @default(1) // Document version tracking
+    isDefault Boolean         @default(false) // Default resume/cover letter for this job
+    createdAt DateTime        @default(now())
+    updatedAt DateTime        @updatedAt
+
+    // Relations
+    job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+    @@index([jobId])
+    @@index([jobId, type])
+    @@index([jobId, isDefault])
+}
+
+// ================================
+// Job Reminder Model (for email/push notifications)
+// ================================
+
+model JobReminder {
+    id           String          @id @default(auto()) @map("_id") @db.ObjectId
+    jobId        String          @db.ObjectId
+    reminderType JobReminderType
+    scheduledAt  DateTime
+    sentAt       DateTime?
+    status       ReminderStatus  @default(PENDING)
+    title        String?
+    message      String?
+    channel      String          @default("email") // email, push, sms
+    metadata     Json? // Additional reminder data
+    createdAt    DateTime        @default(now())
+    updatedAt    DateTime        @updatedAt
+
+    // Relations
+    job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+    @@index([jobId])
+    @@index([scheduledAt, status])
+    @@index([status])
+}

@@ -1,0 +1,233 @@
+// ================================
+// User & Auth Related Enums
+// ================================
+
+enum userRole {
+    USER
+    ADMIN
+    MODERATOR
+    SUPERADMIN
+}
+
+enum userStatus {
+    ACTIVE
+    INACTIVE
+    SUSPENDED
+    DELETED
+    BLOCKED
+}
+
+enum mfaMethod {
+    totp
+    sms
+    email
+    webauthn
+}
+
+enum loginAction {
+    login
+    logout
+}
+
+// ================================
+// Email Related Enums
+// ================================
+
+enum email_type {
+    verification
+    password_reset
+    notification
+}
+
+enum email_provider {
+    sendgrid
+    mailgun
+    ses
+    stmp
+}
+
+enum email_status {
+    sent
+    failed
+    pending
+    bounced
+    delivered
+    opened
+    clicked
+}
+
+// ================================
+// Activity Related Enums
+// ================================
+
+enum eventType {
+    create
+    update
+    delete
+    login
+    logout
+    password_change
+    profile_update
+}
+
+enum actionType {
+    create
+    update
+    delete
+}
+
+// ================================
+// Subscription Related Enums
+// ================================
+
+enum subscriptionStatus {
+    ACTIVE
+    PAST_DUE
+    CANCELED
+    TRIALING
+    INCOMPLETE
+    INCOMPLETE_EXPIRED
+    UNPAID
+}
+
+enum billingInterval {
+    DAY
+    WEEK
+    MONTH
+    YEAR
+}
+
+enum paymentStatus {
+    PENDING
+    PROCESSING
+    SUCCEEDED
+    FAILED
+    CANCELED
+    REFUNDED
+}
+
+enum invoiceStatus {
+    DRAFT
+    OPEN
+    PAID
+    VOID
+    UNCOLLECTIBLE
+}
+
+// ================================
+// Job Related Enums
+// ================================
+
+enum JobStatus {
+    APPLIED
+    SCREENING
+    INTERVIEW
+    OFFER
+    REJECTED
+    ACCEPTED
+    DECLINED
+    WITHDRAWN
+}
+
+enum ResponseStatus {
+    NO_RESPONSE
+    RESPONSE_RECEIVED
+    AWAITING_RESPONSE
+}
+
+enum JobLocationType {
+    REMOTE
+    HYBRID
+    ONSITE
+}
+
+enum AppliedVia {
+    LINKEDIN
+    INDEED
+    COMPANY_WEBSITE
+    REFERRAL
+    RECRUITER
+    JOB_BOARD
+    CAREER_FAIR
+    OTHER
+}
+
+enum InterviewType {
+    PHONE_SCREEN
+    TECHNICAL
+    BEHAVIORAL
+    SYSTEM_DESIGN
+    ONSITE
+    PANEL
+    FINAL
+    OTHER
+}
+
+enum JobPriority {
+    LOW
+    MEDIUM
+    HIGH
+    URGENT
+}
+
+enum FollowUpStatus {
+    PENDING
+    COMPLETED
+    SKIPPED
+}
+
+enum FollowUpType {
+    EMAIL
+    PHONE
+    LINKEDIN
+    OTHER
+}
+
+enum JobTimelineEventType {
+    APPLIED
+    RESPONSE_RECEIVED
+    INTERVIEW_SCHEDULED
+    INTERVIEW_COMPLETED
+    OFFER_RECEIVED
+    OFFER_ACCEPTED
+    OFFER_DECLINED
+    REJECTED
+    WITHDRAWN
+    FOLLOW_UP_SENT
+    NOTE_ADDED
+    STATUS_CHANGED
+    DOCUMENT_ADDED
+    CUSTOM
+}
+
+enum JobDocumentType {
+    RESUME
+    COVER_LETTER
+    PORTFOLIO
+    OFFER_LETTER
+    CONTRACT
+    OTHER
+}
+
+enum JobSourceType {
+    MANUAL
+    AI_URL_PARSED
+    AI_DESCRIPTION_PARSED
+    IMPORTED
+    EXTENSION
+}
+
+enum JobReminderType {
+    FOLLOW_UP_DUE
+    INTERVIEW_REMINDER
+    OFFER_DEADLINE
+    APPLICATION_DEADLINE
+    CUSTOM
+}
+
+enum ReminderStatus {
+    PENDING
+    SENT
+    FAILED
+    CANCELLED
+}

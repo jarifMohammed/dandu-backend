@@ -1,0 +1,12 @@
+// Prisma schema for MongoDB
+// Connection URL is configured in prisma.config.ts (CLI) and PrismaClient constructor (runtime)
+
+generator client {
+    provider = "prisma-client-js"
+    engineType = "binary"
+}
+
+datasource db {
+    provider = "mongodb"
+    url      = env("DATABASE_URL")
+}

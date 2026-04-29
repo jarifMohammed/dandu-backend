@@ -1,0 +1,150 @@
+# version: '3.8'
+
+services:
+  # ================================
+  # MongoDB Replica Set (required for Prisma transactions)
+  # ================================
+  # Note: MongoDB transactions require a replica set.
+  # Atlas provides this by default. For local dev, we configure a single-node replica set.
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    healthcheck:
+      test: |
+        mongosh --port 27017 --quiet --eval "
+        try { rs.status().ok } catch(e) {
+          rs.initiate({_id:'rs0', members:[{_id:0, host:'localhost:27017'}]}).ok
+        }"
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - app_network
+
+  # ================================
+  # Mongo Express — MongoDB Admin UI
+  # ================================
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo_express
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017/job_tracker?replicaSet=rs0&directConnection=true
+      ME_CONFIG_BASICAUTH: "false"
+    ports:
+      - "8081:8081"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # ================================
+  # Redis Stack — Cache, Rate Limiting, Sessions
+  # ================================
+  redis-stack:
+    image: redis/redis-stack:latest
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+      - "8001:8001" # RedisInsight UI
+    volumes:
+      - redis-stack:/var/lib/redis-stack
+    environment:
+      # Redis configuration arguments
+      # - save 60 1: RDB snapshot every 60s if at least 1 key changed
+      # - maxmemory 256mb: Memory limit for cache
+      # - maxmemory-policy noeviction: Don't evict keys when memory full (required for BullMQ)
+      # - appendonly yes: Enable AOF persistence for durability
+      - REDIS_ARGS=--save 60 1 --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # ================================
+  # Prometheus — Metrics collection
+  # ================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # ================================
+  # Loki — Log aggregation
+  # ================================
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki:/etc/loki
+      - loki_data:/loki
+    command: -config.file=/etc/loki/loki-config.yml
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # ================================
+  # Grafana — Monitoring and visualization
+  # ================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3005:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - app_network
+    restart: unless-stopped
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+  redis-stack:
+  redis_data:
+  prometheus_data:
+  loki_data:
+  grafana_data:
