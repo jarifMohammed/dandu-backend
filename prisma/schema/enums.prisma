@@ -5,8 +5,6 @@
 enum UserRole {
     USER
     ADMIN
-    MODERATOR
-    SUPERADMIN
 }
 
 enum UserStatus {
@@ -230,4 +228,43 @@ enum ReminderStatus {
     SENT
     FAILED
     CANCELLED
+}
+
+// ================================
+// SKU Dashboard Related Enums
+// ================================
+
+enum ProductStatus {
+    ACTIVE
+    INACTIVE
+    DISCONTINUED
+}
+
+enum StockLocationType {
+    FBA
+    FBM
+    WAREHOUSE
+    THIRD_PARTY
+}
+
+enum SalesChannelType {
+    AMAZON
+    EBAY
+    WALMART
+    SHOPIFY
+    WEBSITE
+    OTHER
+}
+
+enum ImportStatus {
+    PENDING
+    COMPLETED
+    COMPLETED_WITH_ERRORS
+    FAILED
+}
+
+enum SyncStatus {
+    SUCCESS
+    PARTIAL_SUCCESS
+    FAILED
 }

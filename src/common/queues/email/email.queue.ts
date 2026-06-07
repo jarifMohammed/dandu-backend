@@ -18,7 +18,18 @@ export interface WelcomeEmailJob {
   authId?: string;
 }
 
-export type EmailJob = VerificationEmailJob | WelcomeEmailJob;
+export interface PasswordResetEmailJob {
+  type: 'password_reset';
+  email: string;
+  username: string;
+  resetCode: string;
+  authId?: string;
+}
+
+export type EmailJob =
+  | VerificationEmailJob
+  | WelcomeEmailJob
+  | PasswordResetEmailJob;
 
 @Injectable()
 export class EmailQueueService implements IEmailSender {
@@ -64,6 +75,33 @@ export class EmailQueueService implements IEmailSender {
         username,
         authId,
       } as WelcomeEmailJob,
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 2000,
+        },
+        removeOnComplete: 100,
+        removeOnFail: 500,
+      },
+    );
+  }
+
+  async sendPasswordResetEmail(
+    email: string,
+    username: string,
+    resetCode: string,
+    authId?: string,
+  ): Promise<void> {
+    await this.emailQueue.add(
+      'send-password-reset',
+      {
+        type: 'password_reset',
+        email,
+        username,
+        resetCode,
+        authId,
+      } as PasswordResetEmailJob,
       {
         attempts: 3,
         backoff: {

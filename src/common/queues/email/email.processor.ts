@@ -33,6 +33,9 @@ export class EmailProcessor extends WorkerHost {
         case 'welcome':
           await this.handleWelcomeEmail(job);
           break;
+        case 'password_reset':
+          await this.handlePasswordResetEmail(job);
+          break;
         default:
           this.logger.warn(
             `Unknown email job type: ${String((job.data as { type?: string }).type || 'undefined')}`,
@@ -95,8 +98,7 @@ export class EmailProcessor extends WorkerHost {
         },
         data: {
           emailStatus: 'failed',
-          errorMessage:
-            error instanceof Error ? error.message : 'Failed to send email',
+          errorMessage: this.toEmailErrorMessage(error),
         },
       });
 
@@ -124,5 +126,66 @@ export class EmailProcessor extends WorkerHost {
       // Don't throw for welcome emails - they're non-critical
       // Just log the error and mark job as complete
     }
+  }
+
+  private async handlePasswordResetEmail(job: Job<EmailJob>): Promise<void> {
+    const data = job.data as Extract<EmailJob, { type: 'password_reset' }>;
+    const { email, username, resetCode, authId } = data;
+
+    try {
+      await this.emailService.sendPasswordResetEmail(
+        email,
+        username,
+        resetCode,
+      );
+
+      if (authId) {
+        await this.prismaService.emailHistory.updateMany({
+          where: {
+            authId,
+            emailType: 'password_reset',
+            emailStatus: 'pending',
+          },
+          data: {
+            emailStatus: 'sent',
+          },
+        });
+      }
+
+      this.logger.info(`Password reset email sent successfully to ${email}`, {
+        context: 'EmailProcessor',
+        jobId: job.id,
+        email,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send password reset email to ${email}`, {
+        context: 'EmailProcessor',
+        email,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      if (authId) {
+        await this.prismaService.emailHistory.updateMany({
+          where: {
+            authId,
+            emailType: 'password_reset',
+            emailStatus: 'pending',
+          },
+          data: {
+            emailStatus: 'failed',
+            errorMessage: this.toEmailErrorMessage(error),
+          },
+        });
+      }
+
+      throw error;
+    }
+  }
+
+  private toEmailErrorMessage(error: unknown): string {
+    const message =
+      error instanceof Error ? error.message : 'Failed to send email';
+    return message.length > 180 ? `${message.slice(0, 177)}...` : message;
   }
 }

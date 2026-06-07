@@ -19,6 +19,10 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
   }
 
   protected async shouldSkip(context: ExecutionContext): Promise<boolean> {
+    if (process.env.RATE_LIMIT_ENABLED === 'false') {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest();
     const path = request.url as string;
 

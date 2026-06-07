@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { AccessTokenAuthenticator } from '../../auth/application/services/access-token-authenticator.service';
+import { AccessTokenAuthenticator } from '../../modules/auth/application/services/access-token-authenticator.service';
 
 /**
  * HTTP adapter guard. Authentication rules live in AccessTokenAuthenticator.
@@ -49,5 +49,4 @@ export class AuthGuard implements CanActivate {
     const [type, token] = authHeader.split(' ');
     return type === 'Bearer' ? token : undefined;
   }
-
 }

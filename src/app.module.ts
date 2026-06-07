@@ -1,20 +1,18 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
-import { JobModule } from './job/job.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { RedisModule } from './common/modules/redis.module';
 import { PrismaModule } from './common/modules/prisma.module';
 import { UnitOfWorkModule } from './common/modules/unit-of-work.module';
 import { AppConfigModule } from './common/modules/app-config.module';
 import { RateLimitModule } from './common/modules/rate-limit.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { SkuDashboardModule } from './modules/sku-dashboard/sku-dashboard.module';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './common/config/winston.config';
 import { LoggerModule } from './common/modules/logger.module';
-
-import { MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { RequestIdMiddleware } from './common/middlewares/request-id.middleware';
 
 @Module({
@@ -41,13 +39,13 @@ import { RequestIdMiddleware } from './common/middlewares/request-id.middleware'
     // Metrics module (global - Prometheus metrics)
     MetricsModule,
     AuthModule,
-    JobModule,
+    SkuDashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
+  configure(consumer: MiddlewareConsumer): void {
     consumer.apply(RequestIdMiddleware).forRoutes('*');
   }
 }

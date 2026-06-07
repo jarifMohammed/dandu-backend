@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import { userRole } from '../../auth/interfaces/auth.interface';
+import { userRole } from '../../modules/auth/interfaces/auth.interface';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -18,7 +18,7 @@ export class RolesGuard implements CanActivate {
     }
 
     const { user } = context.switchToHttp().getRequest();
-    
+
     // AuthGuard should run first and populate req.user
     if (!user || !user.role) {
       return false;

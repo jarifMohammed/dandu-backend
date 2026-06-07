@@ -11,9 +11,9 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: ${DATABASE_NAME:-job_tracker}
+      MYSQL_DATABASE: ${DATABASE_NAME:-gandu}
       MYSQL_USER: ${DATABASE_USER:-dandu}
-      MYSQL_PASSWORD: ${DATABASE_PASSWORD:-dandu}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD:-dandu123}
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:

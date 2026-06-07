@@ -1,0 +1,138 @@
+// ================================
+// SKU Dashboard Models
+// ================================
+
+model Product {
+    id           String        @id @default(uuid()) @db.VarChar(36)
+    sku          String        @unique
+    title        String
+    brand        String?
+    status       ProductStatus @default(ACTIVE)
+    cost         Decimal?      @db.Decimal(10, 2)
+    currency     String        @default("USD")
+    weight       Decimal?      @db.Decimal(10, 3)
+    length       Decimal?      @db.Decimal(10, 3)
+    width        Decimal?      @db.Decimal(10, 3)
+    height       Decimal?      @db.Decimal(10, 3)
+    imageUrl     String?
+    productUrl   String?
+    lastSyncedAt DateTime?
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime      @updatedAt
+
+    stock        ProductStock[]
+    channels     ProductChannel[]
+    salesMetrics ProductSalesMetric[]
+
+    @@index([sku])
+    @@index([brand])
+    @@index([status])
+}
+
+model ProductStock {
+    id           String            @id @default(uuid()) @db.VarChar(36)
+    productId    String            @db.VarChar(36)
+    country      String
+    locationType StockLocationType @default(FBA)
+    warehouse    String?
+    quantity     Int               @default(0)
+    reserved     Int               @default(0)
+    inbound      Int               @default(0)
+    available    Int               @default(0)
+    updatedAt    DateTime          @updatedAt
+
+    product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+    @@unique([productId, country, locationType, warehouse])
+    @@index([country])
+    @@index([locationType])
+}
+
+model ProductChannel {
+    id        String           @id @default(uuid()) @db.VarChar(36)
+    productId String           @db.VarChar(36)
+    channel   SalesChannelType
+    country   String?
+    asin      String?
+    listingId String?
+    price     Decimal?         @db.Decimal(10, 2)
+    currency  String           @default("USD")
+    isActive  Boolean          @default(true)
+    updatedAt DateTime         @updatedAt
+
+    product      Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+    salesMetrics ProductSalesMetric[]
+
+    @@unique([productId, channel, country, asin, listingId])
+    @@index([channel])
+    @@index([asin])
+    @@index([listingId])
+}
+
+model ProductSalesMetric {
+    id               String           @id @default(uuid()) @db.VarChar(36)
+    productId        String           @db.VarChar(36)
+    productChannelId String?          @db.VarChar(36)
+    channel          SalesChannelType
+    country          String?
+    periodStart      DateTime
+    periodEnd        DateTime
+    unitsSold        Int              @default(0)
+    revenue          Decimal          @default(0) @db.Decimal(12, 2)
+    velocity         Decimal?         @db.Decimal(10, 3)
+    currency         String           @default("USD")
+    createdAt        DateTime         @default(now())
+    updatedAt        DateTime         @updatedAt
+
+    product        Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+    productChannel ProductChannel? @relation(fields: [productChannelId], references: [id], onDelete: SetNull)
+
+    @@index([productId, periodStart, periodEnd])
+    @@index([channel])
+    @@index([country])
+}
+
+model SkuImportBatch {
+    id           String       @id @default(uuid()) @db.VarChar(36)
+    fileName     String
+    uploadedBy   String?      @db.VarChar(36)
+    status       ImportStatus @default(PENDING)
+    totalRows    Int          @default(0)
+    importedRows Int          @default(0)
+    failedRows   Int          @default(0)
+    startedAt    DateTime     @default(now())
+    completedAt  DateTime?
+    errorMessage String?
+
+    rowErrors SkuImportRowError[]
+}
+
+model SkuImportRowError {
+    id        String   @id @default(uuid()) @db.VarChar(36)
+    batchId   String   @db.VarChar(36)
+    rowNumber Int
+    sku       String?
+    reason    String   @db.Text
+    rawRow    Json?
+    createdAt DateTime @default(now())
+
+    batch SkuImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+    @@index([batchId])
+    @@index([sku])
+}
+
+model SkuSyncLog {
+    id            String     @id @default(uuid()) @db.VarChar(36)
+    provider      String
+    status        SyncStatus
+    startedAt     DateTime   @default(now())
+    completedAt   DateTime?
+    processedRows Int        @default(0)
+    failedRows    Int        @default(0)
+    errorMessage  String?    @db.Text
+    metadata      Json?
+
+    @@index([provider, startedAt])
+    @@index([status])
+}

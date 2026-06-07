@@ -36,7 +36,7 @@ export class ActivityLogService implements IActivityRecorder {
     recordId: string,
     fields: Record<string, any>,
     metadata: ActivityLogMetadata,
-    tx?: any, // backward compat — ignored, use ctx-based approach in new code
+    tx?: any,
   ) {
     const changes: FieldChange[] = Object.entries(fields).map(
       ([key, value]) => ({
@@ -45,8 +45,7 @@ export class ActivityLogService implements IActivityRecorder {
         newValue: String(value),
       }),
     );
-    // For backward compat with tx, wrap in a pseudo-context
-    const ctx = tx ? this.wrapTx(tx) : undefined;
+    const ctx = tx ? this.toTransactionContext(tx) : undefined;
     return this.repo.logActivity(
       {
         tableName,
@@ -81,7 +80,7 @@ export class ActivityLogService implements IActivityRecorder {
     }
     if (changes.length === 0) return null;
 
-    const ctx = tx ? this.wrapTx(tx) : undefined;
+    const ctx = tx ? this.toTransactionContext(tx) : undefined;
     return this.repo.logActivity(
       {
         tableName,
@@ -109,7 +108,7 @@ export class ActivityLogService implements IActivityRecorder {
         newValue: null,
       }),
     );
-    const ctx = tx ? this.wrapTx(tx) : undefined;
+    const ctx = tx ? this.toTransactionContext(tx) : undefined;
     return this.repo.logActivity(
       {
         tableName,
@@ -137,7 +136,7 @@ export class ActivityLogService implements IActivityRecorder {
       password_change: 'update',
       profile_update: 'update',
     } as const;
-    const ctx = tx ? this.wrapTx(tx) : undefined;
+    const ctx = tx ? this.toTransactionContext(tx) : undefined;
     return this.repo.logActivity(
       {
         tableName,
@@ -152,10 +151,22 @@ export class ActivityLogService implements IActivityRecorder {
   }
 
   /**
-   * Backward compat: wraps a raw Prisma TransactionClient into our ITransactionContext.
-   * This allows modules that haven't been refactored yet (Auth) to still pass `tx` directly.
+   * Accepts either the current transaction context or a raw Prisma transaction
+   * client from older call sites.
    */
-  private wrapTx(tx: unknown): ITransactionContext & { prisma: unknown } {
+  private toTransactionContext(
+    tx: unknown,
+  ): ITransactionContext & { prisma: unknown } {
+    if (
+      typeof tx === 'object' &&
+      tx !== null &&
+      '__brand' in tx &&
+      (tx as { __brand?: unknown }).__brand === 'TransactionContext' &&
+      'prisma' in tx
+    ) {
+      return tx as ITransactionContext & { prisma: unknown };
+    }
+
     return { __brand: 'TransactionContext' as const, prisma: tx };
   }
 

@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const root = join(__dirname);
@@ -39,13 +39,18 @@ const forbiddenCorePatterns = [
 
 describe('architecture boundaries', () => {
   it('keeps auth/job domain and application layers framework agnostic', () => {
-    const files = [
-      ...listTypeScriptFiles(join(root, 'auth/application')),
-      ...listTypeScriptFiles(join(root, 'auth/domain')),
-      ...listTypeScriptFiles(join(root, 'job/application')),
-      ...listTypeScriptFiles(join(root, 'job/domain')),
-      ...listTypeScriptFiles(join(root, 'common/domain')),
+    const checkedDirs = [
+      'modules/auth/application',
+      'modules/auth/domain',
+      'modules/sku-dashboard/application',
+      'modules/sku-dashboard/domain',
+      'common/domain',
     ];
+
+    const files = checkedDirs
+      .map((dir) => join(root, dir))
+      .filter((dir) => existsSync(dir))
+      .flatMap((dir) => listTypeScriptFiles(dir));
 
     const violations = files.flatMap((file) => {
       const source = readFileSync(file, 'utf8');

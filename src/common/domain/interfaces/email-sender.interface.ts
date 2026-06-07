@@ -11,6 +11,13 @@ export interface IEmailSender {
     username: string,
     authId?: string,
   ): Promise<void>;
+
+  sendPasswordResetEmail(
+    email: string,
+    username: string,
+    resetCode: string,
+    authId?: string,
+  ): Promise<void>;
 }
 
 export const EMAIL_SENDER_TOKEN = Symbol('IEmailSender');

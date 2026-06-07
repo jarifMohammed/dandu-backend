@@ -4,6 +4,7 @@ interface AppConfig {
   jwt_access_secret: string;
   jwt_refresh_secret: string;
   redis_cache_key_prefix: string;
+  rate_limit_enabled: boolean;
   node_env: string;
   port: number;
   email_host: string;
@@ -32,6 +33,7 @@ const config: AppConfig = {
   jwt_refresh_secret:
     process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || '',
   redis_cache_key_prefix: process.env.REDIS_CACHE_KEY_PREFIX || 'app',
+  rate_limit_enabled: process.env.RATE_LIMIT_ENABLED !== 'false',
   node_env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '5000', 10),
   email_host: process.env.EMAIL_HOST || 'smtp.gmail.com',

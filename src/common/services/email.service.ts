@@ -52,13 +52,21 @@ export class EmailService {
         'EmailService',
       );
     } catch (error) {
+      const smtpMessage =
+        error instanceof Error ? error.message : 'Unknown SMTP error';
+      const smtpCode =
+        typeof error === 'object' && error !== null && 'code' in error
+          ? String((error as { code?: unknown }).code)
+          : undefined;
+
       this.customLogger.error(
-        `Error sending email to ${options.to}`,
+        `Error sending email to ${options.to}: ${smtpCode ? `${smtpCode} - ` : ''}${smtpMessage}`,
         error instanceof Error ? error.stack : undefined,
         'EmailService',
       );
-      console.error('Error sending email:', error);
-      throw AppError.badRequest('Email sending failed, something went wrong!');
+      throw AppError.badRequest(
+        `Email sending failed${smtpCode ? ` (${smtpCode})` : ''}: ${smtpMessage}`,
+      );
     }
   }
 

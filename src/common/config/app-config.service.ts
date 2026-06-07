@@ -15,4 +15,8 @@ export class AppConfigService implements IAppConfig {
   get redis_cache_key_prefix(): string {
     return config.redis_cache_key_prefix;
   }
+
+  get rate_limit_enabled(): boolean {
+    return config.rate_limit_enabled;
+  }
 }
